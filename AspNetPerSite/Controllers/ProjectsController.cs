@@ -1,5 +1,7 @@
 ﻿using AspNetPerSite.Core;
+using AspNetPerSite.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,27 +11,63 @@ namespace AspNetPerSite.Controllers
 {
     public class ProjectsController : Controller
     {
-        public IActionResult Index()
+        private ApplicationContext db;
+        public ProjectsController(ApplicationContext context)
         {
-            var projects = ProjectStorage.Projects;
-            return View(projects);
+            db = context;
         }
+        public async Task<IActionResult> Index()
+        {
+            return View(await db.Projects.ToListAsync());
+        }
+        public IActionResult Create()
+        {
+            return View();
+        }
+        //[HttpPost]
+        //public async Task<IActionResult> Create(Project project)
+        //{
+        //    db.Projects.Add(project);
+        //    await db.SaveChangesAsync();
+        //    return RedirectToAction("Index");
+        //}
+        //public IActionResult Index()
+        //{
+        //    var projects = ProjectStorage.Projects;
+        //    return View(projects);
+        //}
         public IActionResult Add()
         {
             return View();
         }
 
         [HttpPost]
-        public IActionResult Add(Project project)
+        public async Task<IActionResult> Add(Project project)
         {
-            ProjectStorage.Add(project);
+            db.Projects.Add(project);
+            await db.SaveChangesAsync();
+            //ProjectStorage.Add(project);
             return RedirectToAction("Index");
         }
 
-        public IActionResult Remove(string name)
+        [HttpPost]
+        public async Task<IActionResult> Remove(string? name)
         {
-            ProjectStorage.RemoveByName(name);
-            return RedirectToAction("Index");
+            //ProjectStorage.RemoveByName(name);
+            //db.Projects.RemoveByName(name);
+            //await db.SaveChangesAsync();
+            //return RedirectToAction("Index");
+            if (name != null)
+            {
+                Project user = await db.Projects.FirstOrDefaultAsync(p => p.Name == name);
+                if (user != null)
+                {
+                    db.Projects.Remove(user);
+                    await db.SaveChangesAsync();
+                    return RedirectToAction("Index");
+                }
+            }
+            return NotFound();
         }
 
     }
